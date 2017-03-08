@@ -14,7 +14,7 @@ Homepage: http://www.nomyx.net
 author: Corentin Dupont
 data-files:
 data-dir: ""
-extra-source-files: AUTHORS README
+extra-source-files: AUTHORS README.md
 
 library
     build-depends: DebugTraceHelpers  == 0.12.*,
