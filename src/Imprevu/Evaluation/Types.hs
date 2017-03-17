@@ -8,6 +8,9 @@ import           Control.Monad.Except
 import           Control.Monad.State
 import           Imprevu.Types
 
+-- | Environment necessary for the evaluation
+type EvaluateN n s a = ExceptT String (State (EvalEnvN n s)) a
+
 data EvalEnvN n s = EvalEnv { _evalEnv     :: s,
                               _evalConf    :: EvalConfN n s}
 
@@ -16,9 +19,6 @@ data EvalConfN n s = EvalConf { getEvents     :: s -> [EventInfoN n],
                                 _evalFunc     :: forall a. n a -> EvaluateN n s a,           -- evaluation function
                                 _errorHandler :: EventNumber -> String -> EvaluateN n s (),  -- error function
                                 _withEvent    :: EventInfoN n -> EvaluateN n s () -> EvaluateN n s ()}  -- change the context of the event
-
--- | Environment necessary for the evaluation
-type EvaluateN n s a = ExceptT String (State (EvalEnvN n s)) a
 
 makeLenses ''EvalEnvN
 makeLenses ''EvalConfN
