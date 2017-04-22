@@ -81,7 +81,7 @@ evalEvents (TestM tio) = do
 evOnEvent :: (Typeable e, Show e) => EventM TestM e -> ((EventNumber, e) -> TestM ()) -> TestM EventNumber
 evOnEvent ev h = do
    (TestState evs os vs) <- get
-   let en = head $ [1..] \\ (map _eventNumber evs)
+   let en = head $ [1..] \\ (map _eventNumber evs) --find the first free rule number
    put (TestState ((EventInfo en ev h SActive []) : evs) os vs)
    return en
 

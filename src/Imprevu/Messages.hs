@@ -34,16 +34,21 @@ onMessageOnce name = onEventOnce (messageEvent name)
 -- * API calls
 -- Nomyx Rule can register an API function with 'onAPICall' to provide services to other rules.
 -- other Rules are then able to call 'callAPI' or 'callAPIBlocking' to access the services.
--- API calls between Rules are build using message passing.
+-- API calls between Rules are built using message passing.
 
 -- | types of API calls
 data APICall a r = APICall String
 
--- version with one parameters
+-- | onAPICall registers an API function to provide services to other rules.
+-- onAPICall will set up a message handler that will send back another message to the caller.
 onAPICall :: (Typeable a, Show a, Eq a, Typeable r, Show r, Eq r, EvMgt n) => APICall a r -> (a -> n r) -> n EventNumber
-onAPICall (APICall name) action = onMessage (Signal name) (\(msg, a) -> action a >>= sendMessage msg)
+onAPICall (APICall name) action = onMessage (Signal name) sendBackResponse where
+   sendBackResponse (msg, a) = do
+     r <- action a
+     sendMessage msg r
 
--- | version with one parameters
+-- | callAPI calls an API. The result will be fed to the parameter function.
+-- callAPI creates a temporary message handler to register the function, then calls the API.
 callAPI :: (Typeable a, Show a, Eq a, Typeable r, Show r, Eq r, EvMgt n, SysMgt n) => APICall a r -> a -> (r -> n ()) -> n ()
 callAPI (APICall name) a callback = do
    msgTemp <- createTempMsg callback

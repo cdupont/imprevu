@@ -3,6 +3,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell           #-}
+{-# LANGUAGE CPP #-}
 
 
 -- | Evaluation of the events
@@ -23,8 +24,11 @@ import           Imprevu.Evaluation.Types
 import           Imprevu.Evaluation.Utils
 import           Prelude                     hiding (log)
 import           Safe
-import           Debug.NoTrace -- .Helpers    (traceM)
-
+#ifdef DEBUG
+import           Debug.Trace.Helpers    (traceM)
+#else
+import           Debug.NoTrace
+#endif
 
 -- * Event triggers
 
@@ -32,12 +36,14 @@ import           Debug.NoTrace -- .Helpers    (traceM)
 triggerEvent :: (Show a, Typeable a, Show e, Typeable e, Eq a) => Signal a e -> e -> EvaluateN n s ()
 triggerEvent e dat = do
    evs <- use events
-   let evs' = evs -- sortBy (compare `on` _ruleNumber) evs
+   let evs' = evs                                            -- Sort the event? sortBy (compare `on` _ruleNumber) evs
    let sd = (SignalData e dat)
-   eids <- mapM (getUpdatedEventInfo sd) evs'           -- get all the EventInfoNs updated with the field
-   traceM $ "triggerEvent' eids=" ++ (show eids) ++ " sd=" ++ (show sd) ++ " evs=" ++ (show evs)
-   events %= union (map fst eids)                           -- store them
-   void $ mapM triggerIfComplete eids                           -- trigger the handlers for completed events
+   eids <- mapM (getUpdatedEventInfo sd) evs'                -- get all the EventInfoNs updated with the field
+   traceM $ "triggerEvent called with signal=" ++ (show sd) 
+         ++ "\n\tall events=" ++ (show evs) 
+         ++ "\n\tresult events=" ++ (show eids)
+   events %= union (map fst eids)                            -- store them
+   void $ mapM triggerIfComplete eids                        -- trigger the handlers for completed events
 
 -- if the event is complete, trigger its handler
 triggerIfComplete :: (EventInfoN n, Maybe SomeData) -> EvaluateN n s ()
@@ -57,22 +63,22 @@ triggerIfComplete _ = return ()
 getUpdatedEventInfo :: SignalData -> EventInfoN n -> EvaluateN n s (EventInfoN n, Maybe SomeData)
 getUpdatedEventInfo sd@(SignalData sig _) ei@(EventInfo _ ev _ _ envi) = do
    trs <- getEventResult ev envi
-   traceM $ "\ngetUpdatedEventInfo result of event after applying envi=" ++ (show trs) -- ++ " envi=" ++ (show envi) ++ " sig=" ++ (show sig) ++ " addr=" ++ (show addr)
+   traceM $ "\ngetUpdatedEventInfo: event results=" ++ (show trs)
    case trs of
       AccFailure rs -> case find (\(sa, (SomeSignal ss)) -> (ss === sig)) rs of -- check if our signal match one of the remaining signals
          Just (sa, _) -> do
             let envi' = SignalOccurence sd sa : envi
-            er <- getEventResult ev envi'                                                           -- add our event to the environment and get the result
+            er <- getEventResult ev envi'                                       -- add our event to the environment and get the result
             case er of
                AccFailure _ -> do
-                 traceM $ "getUpdatedEventInfo event to be completed"
-                 return (env .~ envi' $ ei, Nothing)                                              -- some other signals are left to complete: add ours in the environment
+                 traceM $ "\tgetUpdatedEventInfo event to be completed"
+                 return (env .~ envi' $ ei, Nothing)                            -- some other signals are left to complete: add ours in the environment
                AccSuccess a -> do
-                 traceM $ "getUpdatedEventInfo event completed"
-                 return (env .~  [] $ ei, Just $ SomeData a)                                       -- event complete: return the final data result
+                 traceM $ "\tgetUpdatedEventInfo event completed"
+                 return (env .~  [] $ ei, Just $ SomeData a)                    -- event complete: return the final data result
          Nothing -> do
-           traceM "getUpdatedEventInfo: no Event matches"
-           return (ei, Nothing)                                                            -- our signal does not belong to this event.
+           traceM "\tgetUpdatedEventInfo: no Event matches"
+           return (ei, Nothing)                                                 -- our signal does not belong to this event.
       AccSuccess a -> return (env .~  [] $ ei, Just $ SomeData a)
 
 
@@ -116,11 +122,11 @@ getEventResult' (SignalEvent a) ers fa = return $ case lookupSignal a fa ers of
    Nothing -> AccFailure [(fa, SomeSignal a)]
 
 getEventResult' (ShortcutEvents es f) ers fa = do
-  ers' <- mapM (\e -> getEventResult' e ers (fa ++ [Shortcut])) es -- get the result for each event in the list
+  ers' <- mapM (\e -> getEventResult' e ers (fa ++ [Shortcut])) es   -- get the result for each event in the list
   traceM $ "getEventResult" ++ (show $ f (toMaybe <$> ers'))
   return $ if f (toMaybe <$> ers')                                   -- apply f to the event results that we already have
-     then AccSuccess $ toMaybe <$> ers'                               -- if the result is true, we are done. Return the list of maybe results
-     else AccFailure $ join $ lefts $ toEither <$> ers'                  -- otherwise, return the list of remaining fields to complete from each event
+     then AccSuccess $ toMaybe <$> ers'                              -- if the result is true, we are done. Return the list of maybe results
+     else AccFailure $ join $ lefts $ toEither <$> ers'              -- otherwise, return the list of remaining fields to complete from each event
 
 
 -- find a signal occurence in an environment
