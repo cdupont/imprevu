@@ -67,7 +67,7 @@ getUpdatedEventInfo sd@(SignalData sig _) ei@(EventInfo _ ev _ _ envi) = do
    case trs of
       AccFailure rs -> case find (\(sa, (SomeSignal ss)) -> (ss === sig)) rs of -- check if our signal match one of the remaining signals
          Just (sa, _) -> do
-            let envi' = SignalOccurence sd sa : envi
+            let envi' = SignalOccurence sd (Just sa) : envi
             er <- getEventResult ev envi'                                       -- add our event to the environment and get the result
             case er of
                AccFailure _ -> do
@@ -139,7 +139,9 @@ getSignalData s sa (SignalOccurence (SignalData s' res) sa') = do
   res' <- cast res
   --both the signals and the addresses must match
   --the addresses need to be compared too because it's possible to build an event with several identical signals.
-  if (sa' == sa) &&  (s === s') then Just res' else Nothing
+  if (isJust sa')
+    then if (fromJust sa' == sa) && (s === s') then Just res' else Nothing
+    else if                         (s === s') then Just res' else Nothing
 
 runEvalError :: EvaluateN n s a -> State (EvalEnvN n s) (Maybe a)
 runEvalError egs = do

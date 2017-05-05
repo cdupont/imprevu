@@ -138,9 +138,9 @@ env f (EventInfo e ev h evs env) = fmap (\env' -> (EventInfo e ev h evs env')) (
 -- status of an event
 data Status = SActive | SDeleted deriving (Eq, Show)
 
--- data and addres from an occurence of a signal
+-- data and address from an occurence of a signal
 data SignalOccurence = SignalOccurence {_signalOccData    :: SignalData,
-                                        _signalOccAddress :: SignalAddress}
+                                        _signalOccAddress :: Maybe SignalAddress}
 
 deriving instance Show SignalOccurence
 
