@@ -55,6 +55,7 @@ library
     buildable: True
     hs-source-dirs: src
     ghc-options: -W
+    cpp-options: -DNODEBUG 
 
 Test-Suite test
     type:      detailed-0.9

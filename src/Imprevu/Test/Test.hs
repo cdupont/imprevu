@@ -142,6 +142,7 @@ testTwoEvents = do
    void $ onInputText_ "" f 1 where
    f a = putStrLn' $ show a
 
+-- This test fails because the two events consumes the same signal and fires
 testTwoEventsEx :: Bool
 testTwoEventsEx = (length g) == 1 where
    g = execEvent testTwoEvents (inputTextSignal "" 1) "toto"
