@@ -137,7 +137,9 @@ lookupSignal s sa envi = headMay $ mapMaybe (getSignalData s sa) envi
 getSignalData :: (Typeable a, Typeable s, Eq s) => Signal s a -> SignalAddress -> SignalOccurence -> Maybe a
 getSignalData s sa (SignalOccurence (SignalData s' res) sa') = do
   res' <- cast res
-  if (sa' == sa) && (s === s') then Just res' else Nothing
+  --both the signals and the addresses must match
+  --the addresses need to be compared too because it's possible to build an event with several identical signals.
+  if (sa' == sa) &&  (s === s') then Just res' else Nothing
 
 runEvalError :: EvaluateN n s a -> State (EvalEnvN n s) (Maybe a)
 runEvalError egs = do
