@@ -96,7 +96,7 @@ getRemainingSignals :: EventInfoN n -> EvalEnvN n s -> [SomeSignal]
 getRemainingSignals ei env = join $ maybeToList $ evalState (runEvalError (getRemainingSignals' ei)) env
 
 
--- compute the result of an event given an environment.
+-- compute the result of an event, using the signals that already fired.
 -- in the case the event cannot be computed because some signals results are pending, return that list instead.
 getEventResult :: EventM n a -> [SignalOccurence] -> EvaluateN n s (AccValidation [(SignalAddress, SomeSignal)] a)
 getEventResult e frs = getEventResult' e frs []
