@@ -47,8 +47,8 @@ instance MonadError String TestM where
 instance EvMgt TestM where
    onEvent         = evOnEvent
    delEvent        = evDelEvent
-   getEvents       = error "not implem"
    sendMessage m a = eventsEval $ triggerEvent m a
+   getEventResults = error "not implem"
 
 instance SysMgt TestM where
    getCurrentTime    = return date1 --liftIO Data.Time.getCurrentTime
@@ -95,7 +95,6 @@ evDelEvent en = do
             put (TestState (replaceWith ((== en) . view eventNumber) eh{_evStatus = SDeleted} evs) os vs)
             return True
          SDeleted -> return False
-
 
 defaultEvalEnv :: EvalEnvN TestM TestState
 defaultEvalEnv = EvalEnv (TestState [] [] (Var "" "")) defaultEvalConf

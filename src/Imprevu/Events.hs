@@ -31,8 +31,8 @@ class (Typeable n, Applicative n, Monad n) => EvMgt n where
    --Events management
    onEvent         :: (Typeable a, Show a) => EventM n a -> ((EventNumber, a) -> n ()) -> n EventNumber
    delEvent        :: EventNumber -> n Bool
-   getEvents       :: n [EventInfoN n]
    sendMessage     :: (Typeable a, Show a, Eq a) => Msg a -> a -> n ()
+   getEventResults :: (Typeable a, Show a) => EventNumber -> [EventM n a] -> n ([Maybe a])
 
 type Msg m = Signal String m
 
@@ -54,21 +54,6 @@ onEventOnce :: (Typeable a, Show a, EvMgt n) => EventM n a -> (a -> n ()) -> n E
 onEventOnce e h = do
     let handler (en, ed) = delEvent en >> h ed
     onEvent e handler
-
-getEvent :: (EvMgt n) => EventNumber -> n (Maybe (EventInfoN n))
-getEvent en = find (\(EventInfo en2 _ _ evst _) -> en == en2 && evst == SActive) <$> getEvents
-
-getIntermediateResults :: (EvMgt n) => EventNumber -> n (Maybe [(ClientNumber, SomeData)])
-getIntermediateResults en = do
-   mev <- getEvent en
-   case mev of
-      Just ev -> return $ Just $ mapMaybe getInputResult (_env ev)
-      Nothing -> return Nothing
-
-getInputResult :: SignalOccurence -> Maybe (ClientNumber, SomeData)
-getInputResult = undefined
---getInputResult (SignalOccurence (SignalData (InputS _ cn) r) _) = Just (cn, SomeData r)
---getInputResult _ = Nothing
 
 -- | on the provided schedule, the supplied function will be called
 schedule :: (EvMgt n, SysMgt n) => Schedule Freq -> (UTCTime -> n ()) -> n ()
