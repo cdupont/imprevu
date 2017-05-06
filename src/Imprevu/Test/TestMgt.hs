@@ -48,7 +48,7 @@ instance EvMgt TestM where
    onEvent         = evOnEvent
    delEvent        = evDelEvent
    sendMessage m a = eventsEval $ triggerEvent m a
-   getEventResults = error "not implem"
+   getEventResult  = error "not implem"
 
 instance SysMgt TestM where
    getCurrentTime    = return date1 --liftIO Data.Time.getCurrentTime
