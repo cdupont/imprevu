@@ -30,9 +30,10 @@ import Safe
 class (Typeable n, Applicative n, Monad n) => EvMgt n where
    --Events management
    onEvent         :: (Typeable a, Show a) => EventM n a -> ((EventNumber, a) -> n ()) -> n EventNumber
-   delEvent        :: EventNumber -> n Bool
    sendMessage     :: (Typeable a, Show a, Eq a) => Msg a -> a -> n ()
    getEventResult  :: (Typeable a, Show a) => EventNumber -> EventM n a -> n (Maybe a)
+   isEventActive   :: EventNumber -> n Bool 
+   delEvent        :: EventNumber -> n Bool
 
 type Msg m = Signal String m
 
