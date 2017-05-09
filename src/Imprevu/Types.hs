@@ -153,8 +153,8 @@ instance Show SignalData where
   show (SignalData s sd) = show s ++ " " ++ (show sd)
 
 -- SignalAddress is a representation of the address of a signal in the event tree
-type SignalAddress = [SignalAddressElem]
-data SignalAddressElem = SumR | SumL | AppR | AppL | BindR | BindL | Shortcut deriving (Show, Read, Ord, Eq, Generic)
+type SignalAddress = [Direction]
+data Direction = R | L deriving (Show, Eq)
 
 makeLenses ''SignalOccurence
 

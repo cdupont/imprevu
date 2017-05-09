@@ -105,16 +105,16 @@ getEventResult e frs = getEventResult' e frs []
 getEventResult' :: EventM n a -> [SignalOccurence] -> SignalAddress -> EvaluateN n s (AccValidation [(SignalAddress, SomeSignal)] a)
 getEventResult' (PureEvent a)   _   _  = return $ AccSuccess a
 getEventResult'  EmptyEvent     _   _  = return $ AccFailure []
-getEventResult' (SumEvent a b)  ers fa = liftM2 (<|>) (getEventResult' a ers (fa ++ [SumL])) (getEventResult' b ers (fa ++ [SumR]))
-getEventResult' (AppEvent f b)  ers fa = liftM2 (<*>) (getEventResult' f ers (fa ++ [AppL])) (getEventResult' b ers (fa ++ [AppR]))
+getEventResult' (SumEvent a b)  ers fa = liftM2 (<|>) (getEventResult' a ers (L:fa)) (getEventResult' b ers (R:fa))
+getEventResult' (AppEvent f b)  ers fa = liftM2 (<*>) (getEventResult' f ers (L:fa)) (getEventResult' b ers (R:fa))
 getEventResult' (LiftEvent a)   _   _  = do
    eval <- use (evalConf . evalFunc)
    AccSuccess <$> eval a
-   --return $ AccSuccess r
+
 getEventResult' (BindEvent a f) ers fa = do
-   er <- getEventResult' a ers (fa ++ [BindL])
+   er <- getEventResult' a ers (L:fa)
    case er of
-      AccSuccess a' -> getEventResult' (f a') ers (fa ++ [BindR])
+      AccSuccess a' -> getEventResult' (f a') ers (R:fa)
       AccFailure bs -> return $ AccFailure bs
 
 getEventResult' (SignalEvent a) ers fa = return $ case lookupSignal a fa ers of
@@ -122,7 +122,7 @@ getEventResult' (SignalEvent a) ers fa = return $ case lookupSignal a fa ers of
    Nothing -> AccFailure [(fa, SomeSignal a)]
 
 getEventResult' (ShortcutEvents es f) ers fa = do
-  ers' <- mapM (\e -> getEventResult' e ers (fa ++ [Shortcut])) es   -- get the result for each event in the list
+  ers' <- mapM (\e -> getEventResult' e ers (R:fa)) es               -- get the result for each event in the list
   traceM $ "getEventResult" ++ (show $ f (toMaybe <$> ers'))
   return $ if f (toMaybe <$> ers')                                   -- apply f to the event results that we already have
      then AccSuccess $ toMaybe <$> ers'                              -- if the result is true, we are done. Return the list of maybe results
