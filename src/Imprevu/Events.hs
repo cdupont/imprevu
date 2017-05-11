@@ -27,6 +27,8 @@ import Data.List
 import Data.Maybe
 import Safe
 
+type Msg m = Signal String m
+
 class (Typeable n, Applicative n, Monad n) => EvMgt n where
    --Events management
    onEvent         :: (Typeable a, Show a) => EventM n a -> ((EventNumber, a) -> n ()) -> n EventNumber
@@ -34,8 +36,6 @@ class (Typeable n, Applicative n, Monad n) => EvMgt n where
    getEventResult  :: (Typeable a, Show a) => EventNumber -> EventM n a -> n (Maybe a)
    isEventActive   :: EventNumber -> n Bool 
    delEvent        :: EventNumber -> n Bool
-
-type Msg m = Signal String m
 
 partial :: (MonadError String n) => String -> n (Maybe a) -> n a
 partial s nm = do
